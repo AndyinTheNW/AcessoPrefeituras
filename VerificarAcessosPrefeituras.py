@@ -1,4 +1,3 @@
-# Bibliotecas usadas:
 import time
 import pandas as pd
 import pyautogui as py
@@ -10,7 +9,7 @@ from selenium.webdriver.common.by import By
 from twocaptcha import TwoCaptcha
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-
+import os
 
 pyautogui.FAILSAFE = False
 
@@ -22,37 +21,32 @@ CHROME_DRIVER = ARQUIVO_BASE + 'chromedriver.exe'
 
 with open(ARQUIVO_CONTROLE, "r") as arquivo_controle:
     linha_inicial_controle = int(arquivo_controle.read())
-    print("Linha arquivo controle:" + linha_inicial_controle + "\n")
-    
+    print("Linha arquivo controle: " + str(linha_inicial_controle))
+
 df = pd.read_excel(ARQUIVO_EXCEL)
 linha = df.shape[0]
 print(linha)
 
 emp = df['CNPJ'][3]
-s = Service(executable_path=CHROME_DRIVER)
 
-browser = webdriver.Chrome(service=s)
-browser.maximize_window()
+if not os.path.exists(CHROME_DRIVER):
+    raise FileNotFoundError(f"chromedriver.exe não encontrado em: {CHROME_DRIVER}")
 
 chrome_options = Options()
+chrome_options.add_argument("headless")
+chrome_options.add_argument('log-level=3')
 chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--ignore-ssl-errors")
 
 
-
-
+browser = webdriver.Chrome(service=Service(executable_path=CHROME_DRIVER), options=chrome_options)
 
 wait = WebDriverWait(browser, 10)
-
-
-
 
 status_login = ""
 
 def lidar_com_login(browser, login, senha, municipio, df, linha_inicial_controle):
-    chrome_options = Options()
-    chrome_options.add_argument("--ignore-certificate-errors")
-    chrome_options.add_argument("--ignore-ssl-errors")
+
 
     linha_inicial_controle = int(linha_inicial_controle)
 
@@ -305,36 +299,31 @@ def login_belo_horizonte(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 def login_rio_de_janeiro(browser, login, senha, linha_inicial_controle):
-    # por horar definir rio como login invalido para todas as linhas
+
     atual = df.loc[linha_inicial_controle, 'Município']
-    status_login = "LOGIN INVALIDO"
-    print ("Login de " + atual + ": " + status_login)
-    df.loc[linha_inicial_controle, 'Observação'] = status_login
-    linha_inicial_controle = linha_inicial_controle + 1
+    browser.find_element(By.ID, 'ctl00_cphCabMenu_tbCpfCnpj').send_keys(login)
+    browser.find_element(By.ID, 'ctl00_cphCabMenu_tbSenha').send_keys(senha)
+    time.sleep(3)
+    # resolver_captcha(browser)
+    # print("captcha resolvido")
+    time.sleep(3)
+    browser.find_element(By.XPATH , '/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[2]/input').click()
+    time.sleep(3)
+
+    #ctl00_cphCabMenu_vsErros
+
+    if browser.find_elements(By.ID, 'ctl00_cphCabMenu_vsErros'):
+        status_login = "LOGIN INVALIDO"
+        print ("Login de " + atual + ": " + status_login)
+        df.loc[linha_inicial_controle, 'Observação'] = status_login
+        linha_inicial_controle= linha_inicial_controle + 1
+    else:
+        status_login = "VÁLIDO"
+        print ("Login de " + atual + ": " + status_login)
+        df.loc[linha_inicial_controle, 'Observação'] = status_login
+        linha_inicial_controle= linha_inicial_controle + 1
 
 
-    # atual = df.loc[linha_inicial_controle, 'Município']
-    # browser.find_element(By.ID, 'ctl00_cphCabMenu_tbCpfCnpj').send_keys(login)
-    # browser.find_element(By.ID, 'ctl00_cphCabMenu_tbSenha').send_keys(senha)
-    # time.sleep(3)
-    # # resolver_captcha(browser)
-    # # print("captcha resolvido")
-    # time.sleep(3)
-    # browser.find_element(By.XPATH , '/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[2]/input').click()
-    # time.sleep(3)
-
-    # #ctl00_cphCabMenu_vsErros
-
-    # if browser.find_elements(By.ID, 'ctl00_cphCabMenu_vsErros'):
-    #     status_login = "LOGIN INVALIDO"
-    #     print ("Login de " + atual + ": " + status_login)
-    #     df.loc[linha_inicial_controle, 'Observação'] = status_login
-    #     linha_inicial_controle= linha_inicial_controle + 1
-    # else:
-    #     status_login = "VÁLIDO"
-    #     print ("Login de " + atual + ": " + status_login)
-    #     df.loc[linha_inicial_controle, 'Observação'] = status_login
-    #     linha_inicial_controle= linha_inicial_controle + 1
 
 """ 
                 ---------------------------------------------------------
@@ -354,15 +343,12 @@ def processar_linha_controle(browser, df, linha_inicial_controle, tentativas_log
     senha = df['SENHA'].iloc[linha_inicial_controle]
     municipio = df['Município'].iloc[linha_inicial_controle]
 
-    chrome_options = Options()
-    chrome_options.add_argument("--ignore-certificate-errors")
-    chrome_options.add_argument("--ignore-ssl-errors")
 
 
     # Verifica se o login e senha já foram tentados
     if (login, senha) in tentativas_login:
         print(f"Login e senha já tentados para {site}")
-        df.at[linha_inicial_controle, 'Observação'] = "Login/Senha já tentados"  
+        df.at[linha_inicial_controle, 'Observação'] = df.at[linha_inicial_controle - 1, 'Observação']
     else:
         try:
             browser.get(site)
@@ -400,10 +386,13 @@ except FileNotFoundError:
     
 tentativas_login = set()  # Armazena as tentativas de login
 
-# while linha_inicial_controle < linha:
-#     linha_inicial_controle = processar_linha_controle(browser, df, linha_inicial_controle, tentativas_login)
-
-
-# loop para testes até a linha 25
-while linha_inicial_controle < 25:
+while linha_inicial_controle < linha:
     linha_inicial_controle = processar_linha_controle(browser, df, linha_inicial_controle, tentativas_login)
+
+with open(ARQUIVO_CONTROLE, "w") as f:
+    f.write("0")
+
+
+# # loop para testes até a linha 25
+# while linha_inicial_controle < 25:
+#     linha_inicial_controle = processar_linha_controle(browser, df, linha_inicial_controle, tentativas_login)
