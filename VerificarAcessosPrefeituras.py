@@ -38,7 +38,6 @@ chrome_options.add_argument('log-level=3')
 chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--ignore-ssl-errors")
 
-
 browser = webdriver.Chrome(service=Service(executable_path=CHROME_DRIVER), options=chrome_options)
 
 wait = WebDriverWait(browser, 10)
@@ -79,7 +78,7 @@ def lidar_com_login(browser, login, senha, municipio, df, linha_inicial_controle
         print(f"Sem login configurado para {municipio}")
         return None
 
-
+# ---------- FUNÇÕES DE LOGIN PARA CADA MUNICÍPIO ------------------------------------
 def login_barra_mansa(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']      
     wait.until(EC.visibility_of_element_located((By.ID, 'vUSUARIO_LOGIN'))).send_keys(login)
@@ -102,19 +101,12 @@ def login_barra_mansa(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         status_login = "LOGIN INVALIDO"
         df.loc[linha_inicial_controle, 'Observação'] = status_login
-
-
-
-
 def login_jaú(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR FORMA DE ACESSO"
     print  ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-    
-
-
 def login_ituiutaba(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']  
     browser.find_element(By.ID, 'usuario').send_keys(login)
@@ -130,14 +122,12 @@ def login_ituiutaba(browser, login, senha, linha_inicial_controle):
         status_login = "LOGIN INVALIDO"
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
-
 def login_betim(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR FORMA DE ACESSO"
     print  ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 def login_jataí(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     browser.find_element(By.ID, 'formLogin:log').send_keys(login)
@@ -156,7 +146,6 @@ def login_jataí(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 def login_balneario_camboriu(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     browser.find_element(By.ID, 'cpf').send_keys(login)
@@ -173,7 +162,6 @@ def login_balneario_camboriu(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 def login_jardim(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR ENDEREÇO DO SITE"
@@ -181,7 +169,6 @@ def login_jardim(browser, login, senha, linha_inicial_controle):
 
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 def login_janauba(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     browser.find_element(By.ID, 'j_idt47:login').send_keys(login)
@@ -199,35 +186,29 @@ def login_janauba(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 def login_americo_brasiliense(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "FALTA INFORMAÇÃO"
     print  ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 def login_birigui(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     print("Login de " + atual + ": " + "VERIFICAR FORMA DE ACESSO")
     status_login = "VERIFICAR FORMA DE ACESSO"
     df.loc[linha_inicial_controle, 'Observação'] = status_login
-
 def login_acailandia(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR FORMA DE ACESSO"
     print ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 def login_barretos(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR FORMA DE ACESSO"
     print ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
-
 def login_altamira(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     browser.find_element(By.ID, 'login-cnpj-tab').click()
@@ -246,7 +227,6 @@ def login_altamira(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 def login_barreiras(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     browser.find_element(By.ID, 'usuario').send_keys(login)
@@ -263,7 +243,6 @@ def login_barreiras(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 def login_jequie(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     browser.find_element(By.ID, 'usuario').send_keys(login)
@@ -280,7 +259,6 @@ def login_jequie(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 def login_belo_horizonte(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     browser.find_element(By.XPATH, '//*[@id="form"]/div[2]/a/img').click()
@@ -298,7 +276,6 @@ def login_belo_horizonte(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 def login_rio_de_janeiro(browser, login, senha, linha_inicial_controle):
 
     atual = df.loc[linha_inicial_controle, 'Município']
@@ -323,7 +300,6 @@ def login_rio_de_janeiro(browser, login, senha, linha_inicial_controle):
         print ("Login de " + atual + ": " + status_login)
         df.loc[linha_inicial_controle, 'Observação'] = status_login
         linha_inicial_controle= linha_inicial_controle + 1
-
 def login_guarulhos(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR FORMA DE ACESSO"
@@ -331,8 +307,7 @@ def login_guarulhos(browser, login, senha, linha_inicial_controle):
     print ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
-
+# def ...
 """ 
 
                 ---------------------------------------------------------
@@ -402,7 +377,8 @@ while linha_inicial_controle < linha:
 with open(ARQUIVO_CONTROLE, "w") as f:
     f.write("0")
 
-
-# # loop para testes até a linha 25
-# while linha_inicial_controle < 25:
-#     linha_inicial_controle = processar_linha_controle(browser, df, linha_inicial_controle, tentativas_login)
+# loop para testes até a linha 25
+""" 
+ while linha_inicial_controle < 25:
+     linha_inicial_controle = processar_linha_controle(browser, df, linha_inicial_controle, tentativas_login)
+"""
