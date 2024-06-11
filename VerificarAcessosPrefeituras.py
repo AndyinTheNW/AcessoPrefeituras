@@ -68,8 +68,8 @@ def lidar_com_login(browser, login, senha, municipio, df, linha_inicial_controle
         "Barreiras" : lambda: login_barreiras(browser, login, senha, linha_inicial_controle),
         "Jequié" : lambda: login_jequie(browser, login, senha, linha_inicial_controle),
         "Belo Horizonte" : lambda: login_belo_horizonte(browser, login, senha, linha_inicial_controle),
-        "Rio de Janeiro" : lambda: login_rio_de_janeiro(browser, login, senha, linha_inicial_controle)
-        "Guarulhos": lambda: login_guarulhos(browser, login, senha, linha_inicial_controle),
+        "Rio de Janeiro" : lambda: login_rio_de_janeiro(browser, login, senha, linha_inicial_controle),
+        "Guarulhos": lambda: login_guarulhos(browser, login, senha, linha_inicial_controle)
         # continuar outros municipios
     }
 
@@ -331,9 +331,10 @@ def login_guarulhos(browser, login, senha, linha_inicial_controle):
     print ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-    
+
 
 """ 
+
                 ---------------------------------------------------------
                 ---------------------------------------------------------
 
@@ -341,6 +342,7 @@ def login_guarulhos(browser, login, senha, linha_inicial_controle):
 
                 ---------------------------------------------------------
                 ---------------------------------------------------------
+
 
 """
 
