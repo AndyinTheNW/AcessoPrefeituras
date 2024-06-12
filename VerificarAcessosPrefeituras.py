@@ -50,26 +50,28 @@ def lidar_com_login(browser, login, senha, municipio, df, linha_inicial_controle
     linha_inicial_controle = int(linha_inicial_controle)
 
     municipios_login = {
-        "São Paulo": "ACESSO POR CERTIFICADO",
-        "Barra Mansa": login_barra_mansa(browser, login, senha, linha_inicial_controle),
-        "Jaú": login_jaú(browser, login, senha, linha_inicial_controle),
-        "Ituiutaba": login_ituiutaba(browser, login, senha, linha_inicial_controle),
-        "Betim": login_betim(browser, login, senha, linha_inicial_controle),
-        "Jataí": login_jataí(browser, login, senha, linha_inicial_controle),
-        "Balneário Camboriú": login_balneario_camboriu(browser, login, senha, linha_inicial_controle),
-        "Jardim": login_jardim(browser, login, senha, linha_inicial_controle),
-        "Janaúba": login_janauba(browser, login, senha, linha_inicial_controle),
-        "Américo Brasiliense": login_americo_brasiliense(browser, login, senha, linha_inicial_controle),
-        "Birigui": login_birigui(browser, login, senha, linha_inicial_controle),
-        "Açailândia": login_acailandia(browser, login, senha, linha_inicial_controle),
-        "Barretos": login_barretos(browser, login, senha, linha_inicial_controle),
-        "Altamira": login_altamira(browser, login, senha, linha_inicial_controle),
-        "Barreiras": login_barreiras(browser, login, senha, linha_inicial_controle),
-        "Jequié": login_jequie(browser, login, senha, linha_inicial_controle),
-        "Belo Horizonte": login_belo_horizonte(browser, login, senha, linha_inicial_controle),
-        "Rio de Janeiro": login_rio_de_janeiro(browser, login, senha, linha_inicial_controle),
-        "Guarulhos":  login_guarulhos(browser, login, senha, linha_inicial_controle),
-        "Curitiba": login_curitiba(browser, login, senha, linha_inicial_controle),
+        "São Paulo": lambda: "ACESSO POR CERTIFICADO",
+        "Barra Mansa": lambda : login_barra_mansa(browser, login, senha, linha_inicial_controle),
+        "Jaú": lambda : login_jaú(browser, login, senha, linha_inicial_controle),
+        "Ituiutaba": lambda : login_ituiutaba(browser, login, senha, linha_inicial_controle),
+        "Betim": lambda : login_betim(browser, login, senha, linha_inicial_controle),
+        "Jataí": lambda : login_jataí(browser, login, senha, linha_inicial_controle),
+        "Balneário Camboriú": lambda : login_balneario_camboriu(browser, login, senha, linha_inicial_controle),
+        "Jardim": lambda : login_jardim(browser, login, senha, linha_inicial_controle),
+        "Janaúba": lambda : login_janauba(browser, login, senha, linha_inicial_controle),
+        "Américo Brasiliense": lambda : login_americo_brasiliense(browser, login, senha, linha_inicial_controle),
+        "Birigui": lambda : login_birigui(browser, login, senha, linha_inicial_controle),
+        "Açailândia": lambda : login_acailandia(browser, login, senha, linha_inicial_controle),
+        "Barretos": lambda : login_barretos(browser, login, senha, linha_inicial_controle),
+        "Altamira": lambda : login_altamira(browser, login, senha, linha_inicial_controle),
+        "Barreiras": lambda : login_barreiras(browser, login, senha, linha_inicial_controle),
+        "Jequié": lambda : login_jequie(browser, login, senha, linha_inicial_controle),
+        "Belo Horizonte": lambda : login_belo_horizonte(browser, login, senha, linha_inicial_controle),
+        "Rio de Janeiro": lambda : login_rio_de_janeiro(browser, login, senha, linha_inicial_controle),
+        "Guarulhos": lambda :  login_guarulhos(browser, login, senha, linha_inicial_controle),
+        "Curitiba": lambda : login_curitiba(browser, login, senha, linha_inicial_controle),
+        "Brasília": lambda : login_brasilia(browser, login, senha, linha_inicial_controle),
+        "Jundiaí": lambda : login_jundiaí(browser, login, senha, linha_inicial_controle)
         # continuar outros municipios
     }
 
@@ -101,7 +103,7 @@ def login_barra_mansa(browser, login, senha, linha_inicial_controle):
 def login_jaú(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR FORMA DE ACESSO"
-    print  ("Login de " + atual + ": " + status_login)
+    print  ("Login de " + atual + ": lambda : " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
 
@@ -123,7 +125,7 @@ def login_ituiutaba(browser, login, senha, linha_inicial_controle):
 def login_betim(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR FORMA DE ACESSO"
-    print  ("Login de " + atual + ": " + status_login)
+    print  ("Login de " + atual + ": lambda : " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
 
@@ -165,7 +167,7 @@ def login_balneario_camboriu(browser, login, senha, linha_inicial_controle):
 def login_jardim(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "VERIFICAR ENDEREÇO DO SITE"
-    print  ("Login de " + atual + ": " + status_login)
+    print  ("Login de " + atual + ": lambda : " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
 
@@ -189,13 +191,13 @@ def login_janauba(browser, login, senha, linha_inicial_controle):
 def login_americo_brasiliense(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
     status_login = "FALTA INFORMAÇÃO"
-    print  ("Login de " + atual + ": " + status_login)
+    print  ("Login de " + atual + ": lambda : " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
 
 def login_birigui(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
-    print("Login de " + atual + ": " + "VERIFICAR FORMA DE ACESSO")
+    print("Login de " + atual + ": lambda : " + "VERIFICAR FORMA DE ACESSO")
     status_login = "VERIFICAR FORMA DE ACESSO"
     df.loc[linha_inicial_controle, 'Observação'] = status_login
 
@@ -322,7 +324,17 @@ def login_curitiba(browser, login, senha, linha_inicial_controle):
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
 
+def login_brasilia(browser, login, senha, linha_inicial_controle):
+    # lidar com recaptcha, por enquanto apresentar "VERIFICAR FORMA DE ACESSO"
+    atual = df.loc[linha_inicial_controle, 'Município']
+    status_login = "VERIFICAR FORMA DE ACESSO"
+    print ("Login de " + atual + ": " + status_login)
+    df.loc[linha_inicial_controle, 'Observação'] = status_login
+    linha_inicial_controle = linha_inicial_controle + 1
+
+
 def login_jundiaí(browser, login, senha, linha_inicial_controle):
+    print("Login Jundiaí")
     atual = df.loc[linha_inicial_controle, 'Município']
     wait.until(EC.visibility_of_element_located((By.ID, 'usuario'))).send_keys(login)
     wait.until(EC.visibility_of_element_located((By.ID, 'senha'))).send_keys(senha)
@@ -382,7 +394,7 @@ def processar_linha_controle(browser, df, linha_inicial_controle, tentativas_log
                 tentativas_login.add((login, senha))  
 
         except Exception as e:  # Captura a exceção específica
-            print(f"Erro ao acessar {site}:")  
+            print(f"Erro ao acessar {site}: ")  
             df.at[linha_inicial_controle, 'Observação'] = 'PÁGINA NÃO ABRIU'
 
     # Salva o progresso e atualiza o DataFrame após cada iteração
