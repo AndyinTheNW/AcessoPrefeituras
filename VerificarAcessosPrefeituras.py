@@ -86,7 +86,6 @@ def lidar_com_login(browser, login, senha, municipio, df, linha_inicial_controle
         print(f"Sem login configurado para {municipio}")
         return None
 
-
 # -------------------------------------------------------------------------------------
 # ---------- FUNÇÕES DE LOGIN PARA CADA MUNICÍPIO ------------------------------------
 # -------------------------------------------------------------------------------------
@@ -113,14 +112,12 @@ def login_barra_mansa(browser, login, senha, linha_inicial_controle):
         status_login = "LOGIN INVALIDO"
         df.loc[linha_inicial_controle, "Observação"] = status_login
 
-
 def login_jaú(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR FORMA DE ACESSO"
     print  ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_ituiutaba(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
@@ -141,14 +138,12 @@ def login_ituiutaba(browser, login, senha, linha_inicial_controle):
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
 
-
 def login_betim(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR FORMA DE ACESSO"
     print  ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_jataí(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
@@ -171,7 +166,6 @@ def login_jataí(browser, login, senha, linha_inicial_controle):
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_balneario_camboriu(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
@@ -198,14 +192,12 @@ def login_balneario_camboriu(browser, login, senha, linha_inicial_controle):
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
 
-
 def login_jardim(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR ENDEREÇO DO SITE"
     print  ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_janauba(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
@@ -224,7 +216,6 @@ def login_janauba(browser, login, senha, linha_inicial_controle):
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
 
-
 def login_americo_brasiliense(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "FALTA INFORMAÇÃO"
@@ -232,13 +223,11 @@ def login_americo_brasiliense(browser, login, senha, linha_inicial_controle):
     df.loc[linha_inicial_controle, "Observação"] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
 
-
 def login_birigui(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     print("Login de " + atual + ": " + "VERIFICAR FORMA DE ACESSO")
     status_login = "VERIFICAR FORMA DE ACESSO"
     df.loc[linha_inicial_controle, "Observação"] = status_login
-
 
 def login_acailandia(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
@@ -247,14 +236,12 @@ def login_acailandia(browser, login, senha, linha_inicial_controle):
     df.loc[linha_inicial_controle, "Observação"] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
 
-
 def login_barretos(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR FORMA DE ACESSO"
     print("Login de " + atual + ":  " + status_login)
     df.loc[linha_inicial_controle, "Observação"] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_altamira(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
@@ -274,7 +261,6 @@ def login_altamira(browser, login, senha, linha_inicial_controle):
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_barreiras(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
@@ -297,7 +283,6 @@ def login_barreiras(browser, login, senha, linha_inicial_controle):
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
 
-
 def login_jequie(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     browser.find_element(By.ID, "usuario").send_keys(login)
@@ -319,7 +304,6 @@ def login_jequie(browser, login, senha, linha_inicial_controle):
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
 
-
 def login_belo_horizonte(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     browser.find_element(By.XPATH, '//*[@id="form"]/div[2]/a/img').click()
@@ -339,7 +323,6 @@ def login_belo_horizonte(browser, login, senha, linha_inicial_controle):
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_rio_de_janeiro(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
@@ -366,7 +349,6 @@ def login_rio_de_janeiro(browser, login, senha, linha_inicial_controle):
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
 
-
 def login_guarulhos(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR FORMA DE ACESSO"
@@ -374,7 +356,6 @@ def login_guarulhos(browser, login, senha, linha_inicial_controle):
     print("Login de " + atual + ":  " + status_login)
     df.loc[linha_inicial_controle, "Observação"] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_curitiba(browser, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, 'Município']
@@ -391,7 +372,6 @@ def login_brasilia(browser, login, senha, linha_inicial_controle):
     print ("Login de " + atual + ": " + status_login)
     df.loc[linha_inicial_controle, 'Observação'] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
-
 
 def login_jundiaí(browser, login, senha, linha_inicial_controle):
     print("Login Jundiaí")
