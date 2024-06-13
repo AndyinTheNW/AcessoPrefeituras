@@ -1,41 +1,4 @@
-# def resolver_captcha(
-#     driver, max_tentativas=1, api_key="8b05577f4418224a86a76ff3bd2b6474", captcha_xpath="/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/img"
-# ):
 
-#     if not captcha_xpath:
-#         captcha_xpath = "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/img"
-
-#     for tentativa in range(1, max_tentativas + 1):
-#         print(f"Tentativa {tentativa}: Iniciando desafio CAPTCHA...")
-
-#         try:
-#             captcha_element = driver.find_element(By.XPATH, captcha_xpath)
-#             captcha_img_path = "captcha.jpg"  # Salva no diretório de trabalho atual
-#             captcha_element.screenshot(captcha_img_path)
-#             print("Imagem CAPTCHA salva.")
-
-#             with TwoCaptcha(api_key) as solver:
-#                 result = solver.normal(captcha_img_path)
-#                 code = result["code"]
-
-#             print(f"CAPTCHA resolvido: {code}")
-#             driver.find_element(By.XPATH, '/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[2]/div/input').send_keys(code)
-#             time.sleep(2)
-
-#             return  # Sai da função em caso de resolução bem-sucedida
-#         except Exception as e:
-#             print(f"Erro ao resolver CAPTCHA: {e}")
-
-#             # Atualiza a página se restarem mais tentativas
-#             if tentativa < max_tentativas:
-#                 print("Atualizando página...")
-#                 py.hotkey("f5")  # Usa "f5" minúsculo para PyAutoGUI
-#                 time.sleep(5)
-
-#     # Levanta uma exceção se todas as tentativas falharem
-#     raise Exception(
-#         "Número máximo de tentativas CAPTCHA atingido. Não foi possível resolver."
-#     )
 
 # def lidar_com_login(browser, login, senha, municipio, df, linha_inicial_controle):
 #     status_login = "" 
