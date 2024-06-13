@@ -26,7 +26,6 @@ with open(ARQUIVO_CONTROLE, "r") as arquivo_controle:
 df = pd.read_excel(ARQUIVO_EXCEL)
 linha = df.shape[0]
 print(linha)
-
 emp = df["CNPJ"][3]
 
 if not os.path.exists(CHROME_DRIVER):
@@ -39,7 +38,6 @@ chrome_options.add_argument("log-level=3")
 chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--ignore-ssl-errors")
 chrome_options.add_argument("--ignore-urlfetcher-cert-requests")
-
 
 browser = webdriver.Chrome(
     service=Service(executable_path=CHROME_DRIVER), options=chrome_options
@@ -398,6 +396,7 @@ def login_jundiaí(browser, login, senha, linha_inicial_controle):
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
+
 
 
 # def ...
