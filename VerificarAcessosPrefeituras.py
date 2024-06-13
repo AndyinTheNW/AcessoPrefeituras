@@ -1,5 +1,7 @@
 import time
+import warnings
 import pandas as pd
+import numpy as np
 import pyautogui as py
 import pyautogui
 from selenium.webdriver.chrome.options import Options
@@ -11,10 +13,19 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 import os
 import sys
+import psutil
+
+
+def is_chrome_running():
+    for process in psutil.process_iter():
+        if process.name() == "chrome.exe":
+            return True
+    return False
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 pyautogui.FAILSAFE = False
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # Constantes
 ARQUIVO_CONTROLE = "controle.txt"
@@ -27,7 +38,6 @@ with open(ARQUIVO_CONTROLE, "r") as arquivo_controle:
     linha_inicial_controle = int(arquivo_controle.read())
     print("Linha arquivo controle: " + str(linha_inicial_controle))
 
-
 df = pd.read_excel(ARQUIVO_EXCEL)
 linha = df.shape[0]
 print(linha)
@@ -38,65 +48,23 @@ if not os.path.exists(CHROME_DRIVER):
 
 
 chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument("headless")
+# chrome_options.add_argument("headless")
 chrome_options.add_argument("log-level=3")
 chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--ignore-ssl-errors")
 chrome_options.add_argument("--ignore-urlfetcher-cert-requests")
 
-browser = webdriver.Chrome(
+driver = webdriver.Chrome(
     service=Service(executable_path=CHROME_DRIVER), options=chrome_options
 )
 
-wait = WebDriverWait(browser, 10)
+wait = WebDriverWait(driver, 10)
 
 status_login = ""
 
 
 """
 Funções para resolver o captcha de Guarulhos.
-"""
-
-
-def clica_no_numero_guarulhos(driver, number):
-    """Cliques na imagem do captcha correspondente ao número fornecido."""
-    for counter in range(1, 10):
-        element = driver.find_element(By.XPATH, f'//*[@id="vNumero"]/img[{counter}]')
-        if str(number) in element.get_attribute("src"):
-            element.click()
-            return
-
-
-def resolve_captcha_guarulhos(driver, wait):
-    """Tentativas de resolver o captcha de Guarulhos."""
-    for attempt in range(3):
-        try:
-            driver.switch_to.frame("frmDiv")
-            image = wait.until(EC.presence_of_element_located((By.NAME, "numSeq2")))
-            image.screenshot(CAPTCHA_IMAGE_PATH)
-
-            numbers = [
-                int(img.get_attribute("value"))
-                for img in driver.find_elements(By.XPATH, "//td/img")
-            ]
-
-            driver.switch_to.default_content()
-            for number in numbers:
-                clica_no_numero_guarulhos(driver, number)
-
-            wait.until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="frmLogin"]/a'))
-            ).click()
-            print("Captcha resolvido com sucesso!")
-            return True
-
-        except Exception as e:
-            print(f"Erro ao resolver captcha (tentativa {attempt+1}): {e}")
-    return False
-
-
-"""
-Fim das funções para resolver o captcha de Guarulhos.
 """
 
 
@@ -148,7 +116,7 @@ def resolve_captcha_rio_de_janeiro(
                 By.XPATH,
                 "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[2]/div/input",
             ).send_keys(code)
-            time.sleep(2)
+            time.sleep(1)
 
             error_message_elements = driver.find_elements(By.XPATH, error_message_xpath)
             for element in error_message_elements:
@@ -175,57 +143,56 @@ def resolve_captcha_rio_de_janeiro(
     )
 
 
-def lidar_com_login(browser, login, senha, municipio, df, linha_inicial_controle):
-
+def lidar_com_login(driver, login, senha, municipio, df, linha_inicial_controle):
     linha_inicial_controle = int(linha_inicial_controle)
 
     municipios_login = {
         "São Paulo": lambda: "ACESSO POR CERTIFICADO",
         "Barra Mansa": lambda: login_barra_mansa(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
-        "Jaú": lambda: login_jaú(browser, login, senha, linha_inicial_controle),
+        "Jaú": lambda: login_jaú(driver, login, senha, linha_inicial_controle),
         "Ituiutaba": lambda: login_ituiutaba(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
-        "Betim": lambda: login_betim(browser, login, senha, linha_inicial_controle),
-        "Jataí": lambda: login_jataí(browser, login, senha, linha_inicial_controle),
+        "Betim": lambda: login_betim(driver, login, senha, linha_inicial_controle),
+        "Jataí": lambda: login_jataí(driver, login, senha, linha_inicial_controle),
         "Balneário Camboriú": lambda: login_balneario_camboriu(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
-        "Jardim": lambda: login_jardim(browser, login, senha, linha_inicial_controle),
-        "Janaúba": lambda: login_janauba(browser, login, senha, linha_inicial_controle),
+        "Jardim": lambda: login_jardim(driver, login, senha, linha_inicial_controle),
+        "Janaúba": lambda: login_janauba(driver, login, senha, linha_inicial_controle),
         "Américo Brasiliense": lambda: login_americo_brasiliense(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
-        "Birigui": lambda: login_birigui(browser, login, senha, linha_inicial_controle),
+        "Birigui": lambda: login_birigui(driver, login, senha, linha_inicial_controle),
         "Açailândia": lambda: login_acailandia(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
         "Barretos": lambda: login_barretos(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
         "Altamira": lambda: login_altamira(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
         "Barreiras": lambda: login_barreiras(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
-        "Jequié": lambda: login_jequie(browser, login, senha, linha_inicial_controle),
+        "Jequié": lambda: login_jequie(driver, login, senha, linha_inicial_controle),
         "Belo Horizonte": lambda: login_belo_horizonte(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
         "Rio de Janeiro": lambda: login_rio_de_janeiro(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
         "Guarulhos": lambda: login_guarulhos(
-            browser, login, senha, linha_inicial_controle
+            driver, login, senha, linha_inicial_controle
         ),
-        "Curitiba": lambda: login_curitiba(
-            browser, login, senha, linha_inicial_controle
-        ),
-        "Brasília": lambda: login_brasilia(browser, linha_inicial_controle),
-        "Jundiaí": lambda: login_jundiaí(browser, login, senha, linha_inicial_controle),
+        "Curitiba": lambda: "ACESSO POR CERTIFICADO",
+        # "Curitiba": lambda: login_curitiba(
+        #     driver, login, senha, linha_inicial_controle),
+        "Brasília": lambda: login_brasilia(driver, linha_inicial_controle),
+        "Jundiaí": lambda: login_jundiaí(driver, login, senha, linha_inicial_controle),
         # continuar outros municipios
     }
 
@@ -239,7 +206,7 @@ def lidar_com_login(browser, login, senha, municipio, df, linha_inicial_controle
 # -------------------------------------------------------------------------------------
 # ---------- FUNÇÕES DE LOGIN PARA CADA MUNICÍPIO ------------------------------------
 # -------------------------------------------------------------------------------------
-def login_barra_mansa(browser, login, senha, linha_inicial_controle):
+def login_barra_mansa(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     wait.until(EC.visibility_of_element_located((By.ID, "vUSUARIO_LOGIN"))).send_keys(
         login
@@ -252,7 +219,7 @@ def login_barra_mansa(browser, login, senha, linha_inicial_controle):
         wait.until(
             EC.element_to_be_clickable((By.XPATH, '//*[@id="TABLECPF"]/div[2]/div'))
         ).click()
-        browser.implicitly_wait(50)
+        driver.implicitly_wait(50)
         status_login = "VÁLIDO"
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
@@ -263,7 +230,7 @@ def login_barra_mansa(browser, login, senha, linha_inicial_controle):
         df.loc[linha_inicial_controle, "Observação"] = status_login
 
 
-def login_jaú(browser, login, senha, linha_inicial_controle):
+def login_jaú(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR FORMA DE ACESSO"
     print("Login de " + atual + ": " + status_login)
@@ -271,17 +238,17 @@ def login_jaú(browser, login, senha, linha_inicial_controle):
     linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_ituiutaba(browser, login, senha, linha_inicial_controle):
+def login_ituiutaba(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.ID, "usuario").send_keys(login)
-    browser.find_element(By.ID, "senha").send_keys(senha)
+    driver.find_element(By.ID, "usuario").send_keys(login)
+    driver.find_element(By.ID, "senha").send_keys(senha)
     try:
         wait.until(
             EC.element_to_be_clickable(
                 (By.XPATH, '//*[@id="closebuttons1btOk"]/table/tbody/tr/td[2]')
             )
         ).click()
-        browser.implicitly_wait(8)
+        driver.implicitly_wait(8)
         status_login = "VÁLIDO"
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
@@ -291,7 +258,7 @@ def login_ituiutaba(browser, login, senha, linha_inicial_controle):
         df.loc[linha_inicial_controle, "Observação"] = status_login
 
 
-def login_betim(browser, login, senha, linha_inicial_controle):
+def login_betim(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR FORMA DE ACESSO"
     print("Login de " + atual + ": " + status_login)
@@ -299,18 +266,18 @@ def login_betim(browser, login, senha, linha_inicial_controle):
     linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_jataí(browser, login, senha, linha_inicial_controle):
+def login_jataí(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.ID, "formLogin:log").send_keys(login)
-    browser.find_element(By.ID, "formLogin:pwd").send_keys(senha)
-    browser.find_element(By.ID, "formLogin:patternLogin").click()
+    driver.find_element(By.ID, "formLogin:log").send_keys(login)
+    driver.find_element(By.ID, "formLogin:pwd").send_keys(senha)
+    driver.find_element(By.ID, "formLogin:patternLogin").click()
     try:
         wait.until(
             EC.visibility_of_element_located(
                 (By.XPATH, '//*[@id="user-actions"]/div/span[2]')
             )
         ).text
-        browser.implicitly_wait(8)
+        driver.implicitly_wait(8)
         status_login = "VÁLIDO"
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
@@ -322,19 +289,19 @@ def login_jataí(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_balneario_camboriu(browser, login, senha, linha_inicial_controle):
+def login_balneario_camboriu(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.ID, "cpf").send_keys(login)
-    browser.find_element(
+    driver.find_element(By.ID, "cpf").send_keys(login)
+    driver.find_element(
         By.XPATH,
         '//*[@id="frmMenuExterno"]/table[2]/tbody/tr/td/table/tbody/tr[2]/td/input',
     ).send_keys(senha)
-    browser.find_element(
+    driver.find_element(
         By.XPATH,
         '//*[@id="frmMenuExterno"]/table[2]/tbody/tr/td/table/tbody/tr[4]/td/input[1]',
     ).click()
     try:
-        usu = browser.find_element(
+        usu = driver.find_element(
             By.XPATH, '//*[@id="agrupador-area"]/div[2]/table/tbody/tr/td[3]/div'
         ).text
         status_login = "VÁLIDO"
@@ -348,7 +315,7 @@ def login_balneario_camboriu(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_jardim(browser, login, senha, linha_inicial_controle):
+def login_jardim(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR ENDEREÇO DO SITE"
     print("Login de " + atual + ": " + status_login)
@@ -356,13 +323,13 @@ def login_jardim(browser, login, senha, linha_inicial_controle):
     linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_janauba(browser, login, senha, linha_inicial_controle):
+def login_janauba(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.ID, "j_idt47:login").send_keys(login)
-    browser.find_element(By.ID, "j_idt47:senha").send_keys(senha)
-    browser.find_element(By.ID, "j_idt47:j_idt60").click()
+    driver.find_element(By.ID, "j_idt47:login").send_keys(login)
+    driver.find_element(By.ID, "j_idt47:senha").send_keys(senha)
+    driver.find_element(By.ID, "j_idt47:j_idt60").click()
     try:
-        usu = browser.find_element(By.XPATH, '//*[@id="j_idt14:j_idt15"]/i').click()
+        usu = driver.find_element(By.XPATH, '//*[@id="j_idt14:j_idt15"]/i').click()
         status_login = "VÁLIDO"
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
@@ -374,7 +341,7 @@ def login_janauba(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_americo_brasiliense(browser, login, senha, linha_inicial_controle):
+def login_americo_brasiliense(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "FALTA INFORMAÇÃO"
     print("Login de " + atual + ": " + status_login)
@@ -382,14 +349,14 @@ def login_americo_brasiliense(browser, login, senha, linha_inicial_controle):
     linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_birigui(browser, login, senha, linha_inicial_controle):
+def login_birigui(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     print("Login de " + atual + ": " + "VERIFICAR FORMA DE ACESSO")
     status_login = "VERIFICAR FORMA DE ACESSO"
     df.loc[linha_inicial_controle, "Observação"] = status_login
 
 
-def login_acailandia(browser, login, senha, linha_inicial_controle):
+def login_acailandia(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR FORMA DE ACESSO"
     print("Login de " + atual + ":  " + status_login)
@@ -397,7 +364,7 @@ def login_acailandia(browser, login, senha, linha_inicial_controle):
     linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_barretos(browser, login, senha, linha_inicial_controle):
+def login_barretos(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
     status_login = "VERIFICAR FORMA DE ACESSO"
     print("Login de " + atual + ":  " + status_login)
@@ -405,15 +372,15 @@ def login_barretos(browser, login, senha, linha_inicial_controle):
     linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_altamira(browser, login, senha, linha_inicial_controle):
+def login_altamira(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.ID, "login-cnpj-tab").click()
-    browser.find_element(By.ID, "usuarioCnpj").click()
-    browser.find_element(By.ID, "usuarioCnpj").send_keys(login)
-    browser.find_element(By.ID, "senhaCnpj").send_keys(senha)
-    browser.find_element(By.ID, "botaoCapcthaCnpj").click()
+    driver.find_element(By.ID, "login-cnpj-tab").click()
+    driver.find_element(By.ID, "usuarioCnpj").click()
+    driver.find_element(By.ID, "usuarioCnpj").send_keys(login)
+    driver.find_element(By.ID, "senhaCnpj").send_keys(senha)
+    driver.find_element(By.ID, "botaoCapcthaCnpj").click()
     try:
-        usu = browser.find_element(By.XPATH, '//*[@id="menu-button"]/i').click()
+        usu = driver.find_element(By.XPATH, '//*[@id="menu-button"]/i').click()
         status_login = "VÁLIDO"
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
@@ -425,15 +392,15 @@ def login_altamira(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_barreiras(browser, login, senha, linha_inicial_controle):
+def login_barreiras(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.ID, "usuario").send_keys(login)
-    browser.find_element(By.ID, "senha").send_keys(senha)
-    browser.find_element(
+    driver.find_element(By.ID, "usuario").send_keys(login)
+    driver.find_element(By.ID, "senha").send_keys(senha)
+    driver.find_element(
         By.XPATH, "/html/body/div/main/div/div/div/div[1]/form/div[4]/span/button"
     ).click()
     try:
-        usu = browser.find_element(
+        usu = driver.find_element(
             By.XPATH, '//*[@id="app"]/main/div/div/div/div[1]/form/div[2]/div/div/div'
         ).text
         status_login = "VÁLIDO"
@@ -447,15 +414,15 @@ def login_barreiras(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_jequie(browser, login, senha, linha_inicial_controle):
+def login_jequie(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.ID, "usuario").send_keys(login)
-    browser.find_element(By.ID, "senha").send_keys(senha)
-    browser.find_element(
+    driver.find_element(By.ID, "usuario").send_keys(login)
+    driver.find_element(By.ID, "senha").send_keys(senha)
+    driver.find_element(
         By.XPATH, "/html/body/div/main/div/div/div/div[1]/form/div[4]/span/button"
     ).click()
     try:
-        usu = browser.find_element(
+        usu = driver.find_element(
             By.XPATH, '//*[@id="app"]/main/div/div/div/div[1]/form/div[2]/div/div/div'
         ).text
         status_login = "VÁLIDO"
@@ -469,14 +436,14 @@ def login_jequie(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_belo_horizonte(browser, login, senha, linha_inicial_controle):
+def login_belo_horizonte(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.XPATH, '//*[@id="form"]/div[2]/a/img').click()
-    browser.find_element(By.ID, "username").send_keys(login)
-    browser.find_element(By.ID, "password").send_keys(senha)
-    browser.find_element(By.XPATH, '//*[@id="fm1"]/div[3]/button').click()
+    driver.find_element(By.XPATH, '//*[@id="form"]/div[2]/a/img').click()
+    driver.find_element(By.ID, "username").send_keys(login)
+    driver.find_element(By.ID, "password").send_keys(senha)
+    driver.find_element(By.XPATH, '//*[@id="fm1"]/div[3]/button').click()
     try:
-        usu = browser.find_element(
+        usu = driver.find_element(
             By.XPATH, '//*[@id="identificacao"]/table/tbody/tr/td[2]/a'
         ).click()
         status_login = "VÁLIDO"
@@ -490,21 +457,17 @@ def login_belo_horizonte(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_rio_de_janeiro(browser, login, senha, linha_inicial_controle):
+def login_rio_de_janeiro(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    browser.find_element(By.ID, "ctl00_cphCabMenu_tbCpfCnpj").send_keys(login)
-    browser.find_element(By.ID, "ctl00_cphCabMenu_tbSenha").send_keys(senha)
-    time.sleep(3)
-    resolve_captcha_rio_de_janeiro(browser)
-
-    time.sleep(3)
-    browser.find_element(
+    driver.find_element(By.ID, "ctl00_cphCabMenu_tbCpfCnpj").send_keys(login)
+    driver.find_element(By.ID, "ctl00_cphCabMenu_tbSenha").send_keys(senha)
+    resolve_captcha_rio_de_janeiro(driver)
+    driver.find_element(
         By.XPATH,
         "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[2]/input",
     ).click()
-    time.sleep(3)
     # ctl00_cphCabMenu_vsErros
-    if browser.find_elements(By.ID, "ctl00_cphCabMenu_vsErros"):
+    if driver.find_elements(By.ID, "ctl00_cphCabMenu_vsErros"):
         status_login = "LOGIN INVALIDO"
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
@@ -516,45 +479,25 @@ def login_rio_de_janeiro(browser, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_guarulhos(browser, login, senha, linha_inicial_controle):
+def login_guarulhos(driver, login, senha, linha_inicial_controle):
+    # verificar acesso
     atual = df.loc[linha_inicial_controle, "Município"]
-    print("Acessando o site de Guarulhos...")
-
-    acessar_XPATH = "/html/body/div[2]/div[1]/div[2]/div/a[1]"
-
-    wait.until(EC.presence_of_element_located((By.XPATH, acessar_XPATH))).click()
-    browser.switch_to.window(browser.window_handles[1])
-    wait.until(EC.presence_of_element_located((By.ID, "frmLogin")))
-    browser.find_element(By.ID, "TxtIdent").send_keys(login)
-    browser.find_element(By.ID, "TxtSenha").send_keys(senha)
-    browser.find_element(By.XPATH, "/html/body").click()
-    time.sleep(1)
-
-    try:
-        resolve_captcha_guarulhos(browser, wait)
-        status_login = "VÁLIDO"
-        print("Login de " + atual + ":  " + status_login)
-        df.loc[linha_inicial_controle, "Observação"] = status_login
-        linha_inicial_controle = linha_inicial_controle + 1
-
-    except Exception as e:
-        status_login = "LOGIN INVALIDO"
-        print("Login de " + atual + ":  " + status_login)
-        print(e)
-        df.loc[linha_inicial_controle, "Observação"] = status_login
-        linha_inicial_controle = linha_inicial_controle + 1
-
-
-def login_curitiba(browser, login, senha, linha_inicial_controle):
-    atual = df.loc[linha_inicial_controle, "Município"]
-    status_login = "ACESSO POR CERTIFICADO"
-    # Também contém captcha
-    print("Login de " + atual + ": " + status_login)
+    print("Login de " + atual + ": " + "VERIFICAR FORMA DE ACESSO")
+    status_login = "VERIFICAR FORMA DE ACESSO"
     df.loc[linha_inicial_controle, "Observação"] = status_login
     linha_inicial_controle = linha_inicial_controle + 1
 
 
-def login_brasilia(browser, linha_inicial_controle):
+# def login_curitiba(driver, login, senha, linha_inicial_controle):
+#     atual = df.loc[linha_inicial_controle, "Município"]
+#     status_login = "ACESSO POR CERTIFICADO"
+#     # Também contém captcha
+#     print("Login de " + atual + ": " + status_login)
+#     df.loc[linha_inicial_controle, "Observação"] = status_login
+#     linha_inicial_controle = linha_inicial_controle + 1
+
+
+def login_brasilia(driver, linha_inicial_controle):
 
     atual = df.loc[linha_inicial_controle, "Município"]
     login = df.loc[linha_inicial_controle, "CNPJ"]
@@ -564,10 +507,10 @@ def login_brasilia(browser, linha_inicial_controle):
     entrar_id = "BtnSalvar"
     sair_id = "Logout"
 
-    browser.get("https://www2.agencianet.fazenda.df.gov.br/DarAvulso/")
+    driver.get("https://www2.agencianet.fazenda.df.gov.br/DarAvulso/")
     wait.until(EC.presence_of_element_located((By.ID, login_id))).send_keys(login)
     result = resolve_captcha_brasilia()
-    browser.execute_script(
+    driver.execute_script(
         f"document.getElementById('{recaptcha_response}').style.display = 'block';"
     )
     wait.until(EC.presence_of_element_located((By.ID, recaptcha_response))).send_keys(
@@ -578,16 +521,19 @@ def login_brasilia(browser, linha_inicial_controle):
     if EC.presence_of_element_located((By.ID, sair_id)):
         status_login = "LOGIN VALIDO"
         print("Login de " + atual + ":  " + status_login)
+        df.loc[linha_inicial_controle, "Observação"] = status_login
 
     elif EC.presence_of_element_located((By.XPATH, error_message_XPATH)):
         status_login = "LOGIN INVALIDO"
         print("Login de " + atual + ":  " + status_login)
+        df.loc[linha_inicial_controle, "Observação"] = status_login
     else:
         status_login = "ERRO AO ACESSAR"
         print("Login de " + atual + ":  " + status_login)
+        df.loc[linha_inicial_controle, "Observação"] = status_login
 
 
-def login_jundiaí(browser, login, senha, linha_inicial_controle):
+def login_jundiaí(driver, login, senha, linha_inicial_controle):
     print("Login Jundiaí")
     atual = df.loc[linha_inicial_controle, "Município"]
     wait.until(EC.visibility_of_element_located((By.ID, "usuario"))).send_keys(login)
@@ -626,7 +572,7 @@ def login_jundiaí(browser, login, senha, linha_inicial_controle):
 """
 
 
-def processar_linha_controle(browser, df, linha_inicial_controle, tentativas_login):
+def processar_linha_controle(driver, df, linha_inicial_controle, tentativas_login):
 
     site = df["Link"].iloc[linha_inicial_controle]
     login = str(df["LOGIN|SENHA"].iloc[linha_inicial_controle])
@@ -642,9 +588,9 @@ def processar_linha_controle(browser, df, linha_inicial_controle, tentativas_log
         ]
     else:
         try:
-            browser.get(site)
+            driver.get(site)
             print(f"Acessando {site}...")
-            browser.implicitly_wait(20)
+            driver.implicitly_wait(20)
 
             if "Certificado" in str(login):
                 print("ACESSO POR CERTIFICADO")
@@ -652,7 +598,7 @@ def processar_linha_controle(browser, df, linha_inicial_controle, tentativas_log
             else:
                 # Lidar com login (presume que a função existe)
                 lidar_com_login(
-                    browser, login, senha, municipio, df, linha_inicial_controle
+                    driver, login, senha, municipio, df, linha_inicial_controle
                 )
                 # Registrar a tentativa de login
                 tentativas_login.add((login, senha))
@@ -680,12 +626,21 @@ except FileNotFoundError:
 tentativas_login = set()  # Armazena as tentativas de login
 
 while linha_inicial_controle < linha:
+    wait = WebDriverWait(driver, 10)
     linha_inicial_controle = processar_linha_controle(
-        browser, df, linha_inicial_controle, tentativas_login
+        driver, df, linha_inicial_controle, tentativas_login
     )
+    if linha_inicial_controle == linha:
+        with open(ARQUIVO_CONTROLE, "w") as f:
+
+            f.write(str(0))
+
+    if not is_chrome_running():
+        break
+
 
 # Loop para testes
 """ 
  while linha_inicial_controle < 25:
-     linha_inicial_controle = processar_linha_controle(browser, df, linha_inicial_controle, tentativas_login)
+     linha_inicial_controle = processar_linha_controle(driver, df, linha_inicial_controle, tentativas_login)
 """
