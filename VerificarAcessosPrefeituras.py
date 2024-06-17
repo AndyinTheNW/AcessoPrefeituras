@@ -53,6 +53,11 @@ chrome_options.add_argument("log-level=3")
 chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--ignore-ssl-errors")
 chrome_options.add_argument("--ignore-urlfetcher-cert-requests")
+# block "Select a certificate" dialog
+chrome_options.add_argument("--disable-client-certificate-type")
+chrome_options.add_argument("--disable-infobars")
+chrome_options.add_argument("--disable-popup-blocking")
+
 
 driver = webdriver.Chrome(
     service=Service(executable_path=CHROME_DRIVER), options=chrome_options
@@ -92,13 +97,9 @@ def resolve_captcha_rio_de_janeiro(
     max_tentativas=5,
     api_key="8b05577f4418224a86a76ff3bd2b6474",
     captcha_xpath="/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/img",
-    error_message_xpath="//div[@id='ctl00_cphCabMenu_vsErros']",
+    error_message_xpath="/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/span",
 ):
-    """As funções de resolução de CAPTCHA para os municipios precisam ser separadas em funções diferentes,
-    pois cada municipio tem um xpath diferente para o captcha e para a mensagem de erro.
-    """
-
-    for tentativa in range(1, max_tentativas + 1):
+    for tentativa in range(1, max_tentativas + 4):
         print(f"Tentativa {tentativa}: Iniciando desafio CAPTCHA...")
 
         try:
@@ -118,29 +119,18 @@ def resolve_captcha_rio_de_janeiro(
             ).send_keys(code)
             time.sleep(1)
 
-            error_message_elements = driver.find_elements(By.XPATH, error_message_xpath)
-            for element in error_message_elements:
-                if (
-                    "O código digitado não confere com o código da imagem."
-                    in element.text
-                ):
-                    print(
-                        "Mensagem de erro de Captcha detectada. Tentando novamente..."
-                    )
-                    continue
+            error_message_element = driver.find_element(By.XPATH, error_message_xpath)
+            erro_visivel = driver.execute_script("return window.getComputedStyle(arguments[0]).display !== 'none'", error_message_element)
 
-            return
+            if not erro_visivel:
+                print("CAPTCHA resolvido com sucesso.")
+                return True
+
         except Exception as e:
-            print(f"Erro ao resolver CAPTCHA: {e}")
-
-            if tentativa < max_tentativas:
-                print("Atualizando página...")
-                driver.refresh()
-                time.sleep(5)
-
-    raise Exception(
-        "Número máximo de tentativas CAPTCHA atingido. Não foi possível resolver."
-    )
+            print(f"Erro ao resolver o CAPTCHA: {e}")
+            if tentativa == max_tentativas:
+                print("Máximo de tentativas excedido.")
+                return False
 
 
 def lidar_com_login(driver, login, senha, municipio, df, linha_inicial_controle):
@@ -459,24 +449,31 @@ def login_belo_horizonte(driver, login, senha, linha_inicial_controle):
 
 def login_rio_de_janeiro(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
+    error_message_element = driver.find_element(By.ID, "ctl00_cphCabMenu_vsErros")
+    error_message = error_message_element.text
+
     driver.find_element(By.ID, "ctl00_cphCabMenu_tbCpfCnpj").send_keys(login)
     driver.find_element(By.ID, "ctl00_cphCabMenu_tbSenha").send_keys(senha)
+
     resolve_captcha_rio_de_janeiro(driver)
+
     driver.find_element(
         By.XPATH,
         "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[2]/input",
     ).click()
-    # ctl00_cphCabMenu_vsErros
-    if driver.find_elements(By.ID, "ctl00_cphCabMenu_vsErros"):
-        status_login = "LOGIN INVALIDO"
-        print("Login de " + atual + ":  " + status_login)
-        df.loc[linha_inicial_controle, "Observação"] = status_login
-        linha_inicial_controle = linha_inicial_controle + 1
+
+    time.sleep(1)
+    
+    if "Senha Inválida." in error_message or "CPF/CNPJ inválido" in error_message or "CPF/CNPJ não possui senha cadastrada." in error_message:
+        status_login = error_message
+    elif "O código digitado não confere com o código da imagem." in error_message:
+        status_login = "ERRO NO CAPTCHA"
     else:
-        status_login = "VÁLIDO"
+        status_login = "LOGIN VÁLIDO"
         print("Login de " + atual + ":  " + status_login)
-        df.loc[linha_inicial_controle, "Observação"] = status_login
-        linha_inicial_controle = linha_inicial_controle + 1
+    
+    df.loc[linha_inicial_controle, "Observação"] = status_login
+
 
 
 def login_guarulhos(driver, login, senha, linha_inicial_controle):
@@ -498,39 +495,46 @@ def login_guarulhos(driver, login, senha, linha_inicial_controle):
 
 
 def login_brasilia(driver, linha_inicial_controle):
-
+    """Código para testes // Pulando para não lidar com o captcha atoa"""
     atual = df.loc[linha_inicial_controle, "Município"]
-    login = df.loc[linha_inicial_controle, "CNPJ"]
-    error_message_XPATH = "/html/body/div[1]/fieldset/div/span"
-    recaptcha_response = "g-recaptcha-response"
-    login_id = "TxtNumDocumento"
-    entrar_id = "BtnSalvar"
-    sair_id = "Logout"
+    status_login = "Pulando"
+    print("Login de " + atual + ": " + status_login)
+    df.loc[linha_inicial_controle, "Observação"] = status_login
+    linha_inicial_controle = linha_inicial_controle + 1
 
-    driver.get("https://www2.agencianet.fazenda.df.gov.br/DarAvulso/")
-    wait.until(EC.presence_of_element_located((By.ID, login_id))).send_keys(login)
-    result = resolve_captcha_brasilia()
-    driver.execute_script(
-        f"document.getElementById('{recaptcha_response}').style.display = 'block';"
-    )
-    wait.until(EC.presence_of_element_located((By.ID, recaptcha_response))).send_keys(
-        result["code"]
-    )
-    wait.until(EC.presence_of_element_located((By.ID, entrar_id))).click()
-    time.sleep(2)
-    if EC.presence_of_element_located((By.ID, sair_id)):
-        status_login = "LOGIN VALIDO"
-        print("Login de " + atual + ":  " + status_login)
-        df.loc[linha_inicial_controle, "Observação"] = status_login
+    # atual = df.loc[linha_inicial_controle, "Município"]
+    # login = df.loc[linha_inicial_controle, "CNPJ"]
+    # error_message_XPATH = "/html/body/div[1]/fieldset/div/span"
+    # recaptcha_response = "g-recaptcha-response"
+    # login_id = "TxtNumDocumento"
+    # entrar_id = "BtnSalvar"
+    # sair_id = "Logout"
 
-    elif EC.presence_of_element_located((By.XPATH, error_message_XPATH)):
-        status_login = "LOGIN INVALIDO"
-        print("Login de " + atual + ":  " + status_login)
-        df.loc[linha_inicial_controle, "Observação"] = status_login
-    else:
-        status_login = "ERRO AO ACESSAR"
-        print("Login de " + atual + ":  " + status_login)
-        df.loc[linha_inicial_controle, "Observação"] = status_login
+    # driver.get("https://www2.agencianet.fazenda.df.gov.br/DarAvulso/")
+    # wait.until(EC.presence_of_element_located((By.ID, login_id))).send_keys(login)
+    # wait.until(EC.presence_of_element_located((By.ID, "id="recaptcha-anchor-label""))).click()
+    # result = resolve_captcha_brasilia()
+    # driver.execute_script(
+    #     f"document.getElementById('{recaptcha_response}').style.display = 'block';"
+    # )
+    # wait.until(EC.presence_of_element_located((By.ID, recaptcha_response))).send_keys(
+    #     result["code"]
+    # )
+    # wait.until(EC.presence_of_element_located((By.ID, entrar_id))).click()
+    # time.sleep(2)
+    # if EC.presence_of_element_located((By.ID, sair_id)):
+    #     status_login = "LOGIN VALIDO"
+    #     print("Login de " + atual + ":  " + status_login)
+    #     df.loc[linha_inicial_controle, "Observação"] = status_login
+
+    # elif EC.presence_of_element_located((By.XPATH, error_message_XPATH)):
+    #     status_login = "LOGIN INVALIDO"
+    #     print("Login de " + atual + ":  " + status_login)
+    #     df.loc[linha_inicial_controle, "Observação"] = status_login
+    # else:
+    #     status_login = "ERRO AO ACESSAR"
+    #     print("Login de " + atual + ":  " + status_login)
+    #     df.loc[linha_inicial_controle, "Observação"] = status_login
 
 
 def login_jundiaí(driver, login, senha, linha_inicial_controle):
@@ -588,15 +592,14 @@ def processar_linha_controle(driver, df, linha_inicial_controle, tentativas_logi
         ]
     else:
         try:
-            driver.get(site)
-            print(f"Acessando {site}...")
-            driver.implicitly_wait(20)
-
-            if "Certificado" in str(login):
-                print("ACESSO POR CERTIFICADO")
+            if "Certificado" in str(login) or "https://isscuritiba.curitiba.pr.gov.br/iss/default.aspx" in site:
+                print("ACESSO POR CERTIFICADO - " + municipio)
                 df.at[linha_inicial_controle, "Observação"] = "ACESSO POR CERTIFICADO"
             else:
                 # Lidar com login (presume que a função existe)
+                driver.get(site)
+                print(f"Acessando {site}...")
+                driver.implicitly_wait(20)
                 lidar_com_login(
                     driver, login, senha, municipio, df, linha_inicial_controle
                 )
