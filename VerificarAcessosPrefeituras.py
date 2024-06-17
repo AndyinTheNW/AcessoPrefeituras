@@ -16,7 +16,6 @@ import os
 import sys
 import psutil
 
-
 def is_chrome_running():
     for process in psutil.process_iter():
         if process.name() == "chrome.exe":
@@ -49,7 +48,7 @@ if not os.path.exists(CHROME_DRIVER):
 
 
 chrome_options = webdriver.ChromeOptions()
-# chrome_options.add_argument("headless")
+chrome_options.add_argument("headless")
 chrome_options.add_argument("log-level=3")
 chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--ignore-ssl-errors")
@@ -92,20 +91,38 @@ def resolve_captcha_brasilia():
     sys.exit("Falha ao resolver o captcha após 3 tentativass.")
     pass
 
+""" Esse dicionário é uma tentativa de tornar a função de resolver captcha mais genérica para diferentes municípios.
+Caso houver municipios com o mesmo captcha, tentar usar a mesma função para resolver o captcha.
+"""
 
-def resolve_captcha_rio_de_janeiro(
+municipios_info_resolve_captcha = {
+    "Rio de Janeiro": {
+        "captcha_xpath": "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/img",
+        "error_message_XPATH": "/html/body/form/div[3]/div[1]/div[6]/div/div/div[1]/ul/li",
+        "login_ID": "ctl00_cphCabMenu_tbCpfCnpj",
+        "senha_ID": "ctl00_cphCabMenu_tbSenha",
+        "entrar_ID": "ctl00_cphCabMenu_btEntrar",
+        "code_input_xpath": "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[2]/div/input",
+    },
+    # Adicionar mais municípios conforme necessário
+}
+
+
+def resolve_captcha(
     driver,
     login,
     senha,
-    entrar_ID="ctl00_cphCabMenu_btEntrar",
-    max_tentativas=5,
+    captcha_xpath,
+    error_message_XPATH,
+    login_ID,
+    senha_ID,
+    entrar_ID,
+    code_input_xpath,
+    linha_inicial_controle,
+    max_tentativas=3,
     api_key="8b05577f4418224a86a76ff3bd2b6474",
-    captcha_xpath="/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/img",
-    error_message_xpath="/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/span",
-    login_ID="ctl00_cphCabMenu_tbCpfCnpj",
-    senha_ID="ctl00_cphCabMenu_tbSenha",
 ):
-    for tentativa in range(1, max_tentativas + 4):
+    for tentativa in range(0, max_tentativas):
         print(f"Tentativa {tentativa}: Iniciando desafio CAPTCHA...")
 
         try:
@@ -126,36 +143,62 @@ def resolve_captcha_rio_de_janeiro(
             code = result["code"]
 
             print(f"CAPTCHA resolvido: {code}")
-            driver.find_element(
-                By.XPATH,
-                "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[2]/div/input",
-            ).send_keys(code)
+            driver.find_element(By.XPATH, code_input_xpath).send_keys(code)
 
             time.sleep(1)
 
-            wait.until(
-                EC.element_to_be_clickable((By.ID, "ctl00_cphCabMenu_btEntrar"))
-            ).click()
+            wait.until(EC.element_to_be_clickable((By.ID, entrar_ID))).click()
             time.sleep(1)
 
             try:
                 error_message_element = driver.find_element(
-                    By.XPATH, error_message_xpath
+                    By.XPATH, error_message_XPATH
                 )
-                erro_visivel = driver.execute_script(
-                    "return window.getComputedStyle(arguments[0]).display !== 'none'",
-                    error_message_element,
-                )
+                error_message = error_message_element.text
+                print("Erro: " + error_message)
+
+                if (
+                    "Senha Inválida." in error_message
+                    or "CPF/CNPJ inválido" in error_message
+                    or "CPF/CNPJ não possui senha cadastrada." in error_message
+                ):
+                    status_login = error_message
+                    print("Login inválido: " + status_login)
+                    df.loc[linha_inicial_controle, "Observação"] = status_login
+                    linha_inicial_controle += 1
+
+                elif (
+                    "O código digitado não confere com o código da imagem."
+                    in error_message
+                ):
+                    print(
+                        "Captcha inválido na tentativa"
+                        + str(tentativa)
+                        + " de "
+                        + str(max_tentativas)
+                        + ", tentando novamente..."
+                    )
+                    continue
+                else:
+                    status_login = "ERRO DE VALIDAÇÃO"
+                    print("Login inválido: " + status_login)
+                    df.loc[linha_inicial_controle, "Observação"] = status_login
+                    linha_inicial_controle += 1
 
             except NoSuchElementException:
-                print("CAPTCHA resolvido com sucesso. (No error message found)")
-                return True
+                status_login = "LOGIN VÁLIDO"
+                print("Login válido: " + status_login)
+                df.loc[linha_inicial_controle, "Observação"] = status_login
+                linha_inicial_controle += 1
+                return
 
         except Exception as e:
-            print(f"Erro ao resolver o CAPTCHA: {e}")
-            if tentativa == max_tentativas:
-                print("Máximo de tentativas excedido.")
-                return False
+            print(f"Erro ao resolver CAPTCHA: {e}")
+            status_login = "ERRO DE VALIDAÇÃO"
+            print("Login inválido: " + status_login)
+            df.loc[linha_inicial_controle, "Observação"] = status_login
+            linha_inicial_controle += 1
+
 
 
 def lidar_com_login(driver, login, senha, municipio, df, linha_inicial_controle):
@@ -472,38 +515,16 @@ def login_belo_horizonte(driver, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
-from selenium.common.exceptions import NoSuchElementException
-
-
 def login_rio_de_janeiro(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
 
-    resolve_captcha_rio_de_janeiro(driver, login, senha)
-
-    try:
-        error_message_element = driver.find_element(By.ID, "ctl00_cphCabMenu_vsErros")
-        error_message = error_message_element.text
-    except NoSuchElementException:
-
-        status_login = "LOGIN VÁLIDO"
-        print("Login de " + atual + ":  " + status_login)
-        df.loc[linha_inicial_controle, "Observação"] = status_login
-        return
-    
-    if (
-        "Senha Inválida." in error_message
-        or "CPF/CNPJ inválido" in error_message
-        or "CPF/CNPJ não possui senha cadastrada." in error_message
-    ):
-        status_login = error_message
-    elif "O código digitado não confere com o código da imagem." in error_message:
-        status_login = "ERRO NO CAPTCHA"
-    else:
-        status_login = "LOGIN VÁLIDO"
-        print("Login de " + atual + ":  " + status_login)
-
-    df.loc[linha_inicial_controle, "Observação"] = status_login
-    linha_inicial_controle = linha_inicial_controle + 1
+    resolve_captcha(
+        driver,
+        login,
+        senha,
+        **municipios_info_resolve_captcha[atual],
+        linha_inicial_controle=linha_inicial_controle,
+    )
 
 
 def login_guarulhos(driver, login, senha, linha_inicial_controle):
@@ -590,8 +611,6 @@ def login_jundiaí(driver, login, senha, linha_inicial_controle):
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
-
-
 # def ...
 
 """ 
