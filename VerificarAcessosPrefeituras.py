@@ -7,6 +7,7 @@ import pyautogui
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from twocaptcha import TwoCaptcha
 from selenium import webdriver
@@ -48,7 +49,7 @@ if not os.path.exists(CHROME_DRIVER):
 
 
 chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument("headless")
+# chrome_options.add_argument("headless")
 chrome_options.add_argument("log-level=3")
 chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--ignore-ssl-errors")
@@ -94,15 +95,27 @@ def resolve_captcha_brasilia():
 
 def resolve_captcha_rio_de_janeiro(
     driver,
+    login,
+    senha,
+    entrar_ID="ctl00_cphCabMenu_btEntrar",
     max_tentativas=5,
     api_key="8b05577f4418224a86a76ff3bd2b6474",
     captcha_xpath="/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/img",
     error_message_xpath="/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/span",
+    login_ID="ctl00_cphCabMenu_tbCpfCnpj",
+    senha_ID="ctl00_cphCabMenu_tbSenha",
 ):
     for tentativa in range(1, max_tentativas + 4):
         print(f"Tentativa {tentativa}: Iniciando desafio CAPTCHA...")
 
         try:
+            wait.until(EC.presence_of_element_located((By.ID, login_ID))).send_keys(
+                login
+            )
+            wait.until(EC.presence_of_element_located((By.ID, senha_ID))).send_keys(
+                senha
+            )
+
             captcha_element = driver.find_element(By.XPATH, captcha_xpath)
             captcha_img_path = "captcha.jpg"
             captcha_element.screenshot(captcha_img_path)
@@ -117,13 +130,25 @@ def resolve_captcha_rio_de_janeiro(
                 By.XPATH,
                 "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[1]/div/div[2]/div/div[2]/div/input",
             ).send_keys(code)
+
             time.sleep(1)
 
-            error_message_element = driver.find_element(By.XPATH, error_message_xpath)
-            erro_visivel = driver.execute_script("return window.getComputedStyle(arguments[0]).display !== 'none'", error_message_element)
+            wait.until(
+                EC.element_to_be_clickable((By.ID, "ctl00_cphCabMenu_btEntrar"))
+            ).click()
+            time.sleep(1)
 
-            if not erro_visivel:
-                print("CAPTCHA resolvido com sucesso.")
+            try:
+                error_message_element = driver.find_element(
+                    By.XPATH, error_message_xpath
+                )
+                erro_visivel = driver.execute_script(
+                    "return window.getComputedStyle(arguments[0]).display !== 'none'",
+                    error_message_element,
+                )
+
+            except NoSuchElementException:
+                print("CAPTCHA resolvido com sucesso. (No error message found)")
                 return True
 
         except Exception as e:
@@ -447,33 +472,38 @@ def login_belo_horizonte(driver, login, senha, linha_inicial_controle):
         linha_inicial_controle = linha_inicial_controle + 1
 
 
+from selenium.common.exceptions import NoSuchElementException
+
+
 def login_rio_de_janeiro(driver, login, senha, linha_inicial_controle):
     atual = df.loc[linha_inicial_controle, "Município"]
-    error_message_element = driver.find_element(By.ID, "ctl00_cphCabMenu_vsErros")
-    error_message = error_message_element.text
 
-    driver.find_element(By.ID, "ctl00_cphCabMenu_tbCpfCnpj").send_keys(login)
-    driver.find_element(By.ID, "ctl00_cphCabMenu_tbSenha").send_keys(senha)
+    resolve_captcha_rio_de_janeiro(driver, login, senha)
 
-    resolve_captcha_rio_de_janeiro(driver)
+    try:
+        error_message_element = driver.find_element(By.ID, "ctl00_cphCabMenu_vsErros")
+        error_message = error_message_element.text
+    except NoSuchElementException:
 
-    driver.find_element(
-        By.XPATH,
-        "/html/body/form/div[3]/div[1]/div[6]/div/div/div[2]/div[1]/div[2]/input",
-    ).click()
-
-    time.sleep(1)
+        status_login = "LOGIN VÁLIDO"
+        print("Login de " + atual + ":  " + status_login)
+        df.loc[linha_inicial_controle, "Observação"] = status_login
+        return
     
-    if "Senha Inválida." in error_message or "CPF/CNPJ inválido" in error_message or "CPF/CNPJ não possui senha cadastrada." in error_message:
+    if (
+        "Senha Inválida." in error_message
+        or "CPF/CNPJ inválido" in error_message
+        or "CPF/CNPJ não possui senha cadastrada." in error_message
+    ):
         status_login = error_message
     elif "O código digitado não confere com o código da imagem." in error_message:
         status_login = "ERRO NO CAPTCHA"
     else:
         status_login = "LOGIN VÁLIDO"
         print("Login de " + atual + ":  " + status_login)
-    
-    df.loc[linha_inicial_controle, "Observação"] = status_login
 
+    df.loc[linha_inicial_controle, "Observação"] = status_login
+    linha_inicial_controle = linha_inicial_controle + 1
 
 
 def login_guarulhos(driver, login, senha, linha_inicial_controle):
@@ -592,7 +622,10 @@ def processar_linha_controle(driver, df, linha_inicial_controle, tentativas_logi
         ]
     else:
         try:
-            if "Certificado" in str(login) or "https://isscuritiba.curitiba.pr.gov.br/iss/default.aspx" in site:
+            if (
+                "Certificado" in str(login)
+                or "https://isscuritiba.curitiba.pr.gov.br/iss/default.aspx" in site
+            ):
                 print("ACESSO POR CERTIFICADO - " + municipio)
                 df.at[linha_inicial_controle, "Observação"] = "ACESSO POR CERTIFICADO"
             else:
