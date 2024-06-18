@@ -15,6 +15,8 @@ from selenium.webdriver.chrome.service import Service
 import os
 import sys
 import psutil
+from selenium.common.exceptions import UnexpectedAlertPresentException
+
 
 def is_chrome_running():
     for process in psutil.process_iter():
@@ -48,7 +50,7 @@ if not os.path.exists(CHROME_DRIVER):
 
 
 chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument("headless")
+# chrome_options.add_argument("headless")
 chrome_options.add_argument("log-level=3")
 chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--ignore-ssl-errors")
@@ -73,6 +75,89 @@ Funções para resolver o captcha de Guarulhos.
 """
 
 
+def clica_no_numero_guarulhos(driver, number):
+    """Cliques na imagem do captcha correspondente ao número fornecido."""
+    for counter in range(1, 10):
+        element = driver.find_element(By.XPATH, f'//*[@id="vNumero"]/img[{counter}]')
+        if str(number) in element.get_attribute("src"):
+            element.click()
+            return
+
+
+def resolve_captcha_guarulhos(
+    driver, wait, login, senha, url, status_login, linha_inicial_controle
+):
+    """Tentativas de resolver o captcha de Guarulhos."""
+    for attempt in range(5):
+        try:
+            # se o numero de janelas for maior que 1
+            if len(driver.window_handles) > 1:
+                driver.switch_to.window(driver.window_handles[1])
+                driver.get(url)
+                continue
+            else:
+                driver.get(url)
+            wait.until(
+                EC.presence_of_element_located(
+                    (By.XPATH, "/html/body/div[2]/div[1]/div[2]/div/a[1]")
+                )
+            ).click()
+
+            driver.switch_to.window(driver.window_handles[1])
+
+            url = driver.current_url
+            wait.until(EC.presence_of_element_located((By.ID, "frmLogin")))
+            wait.until(EC.presence_of_element_located((By.ID, "TxtIdent"))).send_keys(
+                login
+            )
+            wait.until(EC.presence_of_element_located((By.ID, "TxtSenha"))).send_keys(
+                senha
+            )
+            driver.find_element(By.XPATH, "/html/body").click()
+
+            driver.switch_to.frame("frmDiv")
+            image = wait.until(EC.presence_of_element_located((By.NAME, "numSeq2")))
+            image.screenshot(CAPTCHA_IMAGE_PATH)
+
+            numbers = [
+                int(img.get_attribute("value"))
+                for img in driver.find_elements(By.XPATH, "//td/img")
+            ]
+
+            driver.switch_to.default_content()
+
+            for number in numbers:
+                time.sleep(0.5)
+                clica_no_numero_guarulhos(driver, number)
+
+            wait.until(
+                EC.element_to_be_clickable((By.XPATH, '//*[@id="frmLogin"]/a'))
+            ).click()
+            print("Clicou em entrar...")
+            time.sleep(1)
+            driver.switch_to.window(driver.window_handles[1])
+            url = driver.current_url
+
+            if url == "https://wwwx.gissonline.com.br/interna/default.cfm":
+                print(f"Captcha resolvido com sucesso!, {url}")
+
+                return True
+            else:
+                continue
+
+        except UnexpectedAlertPresentException:
+            time.sleep(1)
+            print(f"Erro ao resolver captcha (tentativa {attempt+1})", sys.exc_info())
+            continue
+
+    return False
+
+
+""" 
+Fim das funções de resolver captcha de Guarulhos.
+"""
+
+
 def resolve_captcha_brasilia():
     api_key = os.getenv("APIKEY_2CAPTCHA", "8b05577f4418224a86a76ff3bd2b6474")
     solver = TwoCaptcha(api_key)
@@ -90,6 +175,7 @@ def resolve_captcha_brasilia():
 
     sys.exit("Falha ao resolver o captcha após 3 tentativass.")
     pass
+
 
 """ Esse dicionário é uma tentativa de tornar a função de resolver captcha mais genérica para diferentes municípios.
 Caso houver municipios com o mesmo captcha, tentar usar a mesma função para resolver o captcha.
@@ -198,7 +284,6 @@ def resolve_captcha(
             print("Login inválido: " + status_login)
             df.loc[linha_inicial_controle, "Observação"] = status_login
             linha_inicial_controle += 1
-
 
 
 def lidar_com_login(driver, login, senha, municipio, df, linha_inicial_controle):
@@ -530,10 +615,23 @@ def login_rio_de_janeiro(driver, login, senha, linha_inicial_controle):
 def login_guarulhos(driver, login, senha, linha_inicial_controle):
     # verificar acesso
     atual = df.loc[linha_inicial_controle, "Município"]
-    print("Login de " + atual + ": " + "VERIFICAR FORMA DE ACESSO")
-    status_login = "VERIFICAR FORMA DE ACESSO"
-    df.loc[linha_inicial_controle, "Observação"] = status_login
-    linha_inicial_controle = linha_inicial_controle + 1
+    url = df.loc[linha_inicial_controle, "Link"]
+    driver.get(url)
+    resolve_captcha_guarulhos(
+        driver,
+        wait,
+        login,
+        senha,
+        url,
+        status_login,
+        linha_inicial_controle=linha_inicial_controle,
+    )
+    # verifica se a próxima linha é o mesmo município, se sim, repete o processo
+
+    if df.loc[linha_inicial_controle + 1, "Município"] == atual:
+        login_guarulhos(driver, login, senha, linha_inicial_controle + 1)
+    else:
+        linha_inicial_controle = linha_inicial_controle + 1
 
 
 # def login_curitiba(driver, login, senha, linha_inicial_controle):
@@ -611,6 +709,8 @@ def login_jundiaí(driver, login, senha, linha_inicial_controle):
         print("Login de " + atual + ":  " + status_login)
         df.loc[linha_inicial_controle, "Observação"] = status_login
         linha_inicial_controle = linha_inicial_controle + 1
+
+
 # def ...
 
 """ 
