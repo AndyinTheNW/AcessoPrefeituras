@@ -97,7 +97,7 @@ def resolve_captcha(
     code_input_xpath,
     linha_inicial_controle,
     max_tentativas=3,
-    api_key="8b05577f4418224a86a76ff3bd2b6474",
+    api_key="",
 ):
     for tentativa in range(0, max_tentativas):
         print(f"Tentativa {tentativa}: Iniciando desafio CAPTCHA...")
