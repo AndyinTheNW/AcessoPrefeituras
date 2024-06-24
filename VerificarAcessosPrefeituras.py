@@ -159,7 +159,7 @@ Fim das funções de resolver captcha de Guarulhos.
 
 
 def resolve_captcha_brasilia():
-    api_key = os.getenv("APIKEY_2CAPTCHA", "8b05577f4418224a86a76ff3bd2b6474")
+    api_key = os.getenv("APIKEY_2CAPTCHA", "INSERIR_CHAVE")
     solver = TwoCaptcha(api_key)
 
     for _ in range(3):
@@ -206,7 +206,7 @@ def resolve_captcha(
     code_input_xpath,
     linha_inicial_controle,
     max_tentativas=3,
-    api_key="8b05577f4418224a86a76ff3bd2b6474",
+    api_key="Inserir_Chave",
 ):
     for tentativa in range(0, max_tentativas):
         print(f"Tentativa {tentativa}: Iniciando desafio CAPTCHA...")
